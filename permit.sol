@@ -1,9 +1,23 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
-contract ERC20Permit {
+interface IERC20Permit is IERC20 {
+    function permit(
+        address owner,
+        address spender,
+        uint256 value,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external;
+}
+
+
+contract ERC20PermitContract {
     using ECDSA for bytes32;
 
     address public owner;
@@ -31,13 +45,13 @@ contract ERC20Permit {
             )
         );
         address signatory = digest.recover(v, r, s);
-        require(signatory == from, "Invalid signature");
+        require(signatory == from, "Error: Invalid signature ");
 
         // Vérifier que la demande n'a pas expiré
         require(block.timestamp <= deadline, "Signature expired");
 
-        // Autoriser le contrat à dépenser les tokens au nom de `from`
-        IERC20(token).permit(from, address(this), amount, deadline, v, r, s);
+        // Utiliser la fonction permit pour approuver le transfert
+        IERC20Permit(token).permit(from, address(this), amount, deadline, v, r, s);
 
         // Effectuer le transfert de tokens
         IERC20(token).transferFrom(from, to, amount);
